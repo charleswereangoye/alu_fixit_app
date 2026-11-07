@@ -23,14 +23,30 @@ class AuthProvider with ChangeNotifier {
     try {
       final User? firebaseUser = _auth.currentUser;
       if (firebaseUser != null) {
-        final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
-        if (doc.exists && doc.data() != null) {
-          _currentUser = UserModel.fromMap(doc.data()!, doc.id);
-          notifyListeners();
+        try {
+          final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+          if (doc.exists && doc.data() != null) {
+            _currentUser = UserModel.fromMap(doc.data()!, doc.id);
+          } else {
+            _currentUser = UserModel(
+              uid: firebaseUser.uid,
+              name: firebaseUser.email?.split('@').first ?? 'Student',
+              email: firebaseUser.email ?? '',
+              role: 'student',
+            );
+          }
+        } catch (e) {
+          debugPrint('Firestore profile fetch notice: $e');
+          _currentUser = UserModel(
+            uid: firebaseUser.uid,
+            name: firebaseUser.email?.split('@').first ?? 'Student',
+            email: firebaseUser.email ?? '',
+            role: 'student',
+          );
         }
+        notifyListeners();
       }
     } catch (e) {
-      // In case offline or Firebase not yet initialized
       debugPrint('Auth check error: $e');
     }
   }
@@ -79,7 +95,12 @@ class AuthProvider with ChangeNotifier {
         campus: campus,
       );
 
-      await _firestore.collection('users').doc(uid).set(newUser.toMap());
+      // Attempt to save user to Firestore (safe fallback if rules locked)
+      try {
+        await _firestore.collection('users').doc(uid).set(newUser.toMap());
+      } catch (firestoreError) {
+        debugPrint('Firestore save error (check Firestore Security Rules): $firestoreError');
+      }
 
       _currentUser = newUser;
       _isLoading = false;
@@ -91,8 +112,9 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
+      debugPrint('General signup error: $e');
       _isLoading = false;
-      _errorMessage = 'An error occurred. Please try again.';
+      _errorMessage = 'An error occurred: $e';
       notifyListeners();
       return false;
     }
@@ -124,12 +146,22 @@ class AuthProvider with ChangeNotifier {
 
       final uid = userCredential.user!.uid;
 
-      // Fetch user profile from Firestore
-      final doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists && doc.data() != null) {
-        _currentUser = UserModel.fromMap(doc.data()!, doc.id);
-      } else {
-        // Fallback if document not found
+      // Fetch user profile from Firestore safely
+      try {
+        final doc = await _firestore.collection('users').doc(uid).get();
+        if (doc.exists && doc.data() != null) {
+          _currentUser = UserModel.fromMap(doc.data()!, doc.id);
+        } else {
+          // Fallback if document not found in Firestore
+          _currentUser = UserModel(
+            uid: uid,
+            name: cleanEmail.split('@').first,
+            email: cleanEmail,
+            role: 'student',
+          );
+        }
+      } catch (firestoreError) {
+        debugPrint('Firestore profile fetch notice during login: $firestoreError');
         _currentUser = UserModel(
           uid: uid,
           name: cleanEmail.split('@').first,
@@ -147,8 +179,9 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
+      debugPrint('General signIn error: $e');
       _isLoading = false;
-      _errorMessage = 'Failed to sign in. Please check your connection.';
+      _errorMessage = 'Failed to sign in ($e). Please try again.';
       notifyListeners();
       return false;
     }

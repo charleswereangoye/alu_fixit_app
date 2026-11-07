@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "782082675748",
+    "project_id": "alu-fixit-app",
+    "storage_bucket": "alu-fixit-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:782082675748:android:d10b43afa27bf8ed3c74b1",
+        "android_client_info": {
+          "package_name": "com.example.alu_fixit_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNj_DvAKLIz9CZgTrvWQ2AnR0XyLz0plE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

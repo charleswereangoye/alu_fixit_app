@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'providers/auth_provider.dart';
+import 'providers/incident_provider.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/main_navigation_screen.dart';
 import 'utils/app_theme.dart';
 
 void main() async {
   // Ensure Flutter engine is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase (safely caught if google-services.json not yet linked)
+  // Initialize Firebase (safely caught if offline or initializing)
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    debugPrint('Firebase initialization warning: $e');
+    debugPrint('Firebase initialization notice: $e');
   }
 
   runApp(const ALUFixItApp());
@@ -28,6 +30,7 @@ class ALUFixItApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..checkAuthState()),
+        ChangeNotifierProvider(create: (_) => IncidentProvider()),
       ],
       child: MaterialApp(
         title: 'ALU FixIt',
@@ -39,7 +42,7 @@ class ALUFixItApp extends StatelessWidget {
   }
 }
 
-// Handles switching between Login and Main screens based on authentication state
+// Handles switching between Login and Home screens based on authentication state
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -47,57 +50,9 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
-    // If authenticated, show placeholder until Step 2 is added
+    // If authenticated, navigate directly to Home Screen with Bottom Navigation
     if (authProvider.isAuthenticated) {
-      return Scaffold(
-        backgroundColor: AppTheme.scaffoldBackground,
-        appBar: AppBar(
-          title: const Text('ALU FixIt'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () => authProvider.signOut(),
-            ),
-          ],
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.check_circle_outline,
-                  color: AppTheme.primary,
-                  size: 64,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Welcome, ${authProvider.currentUser?.name}!',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Role: ${authProvider.currentUser?.role.toUpperCase()} • ${authProvider.currentUser?.department}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => authProvider.signOut(),
-                  child: const Text('Log Out'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      return const MainNavigationScreen();
     }
 
     // Default to login screen
