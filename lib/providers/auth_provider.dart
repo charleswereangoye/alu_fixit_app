@@ -220,4 +220,63 @@ class AuthProvider with ChangeNotifier {
         return 'Authentication failed ($code). Please try again.';
     }
   }
+
+  // Update profile image in Firestore and local state
+  Future<bool> updateProfileImage(String imageUrl) async {
+    if (_currentUser == null) return false;
+    try {
+      await _firestore.collection('users').doc(_currentUser!.uid).update({
+        'profileImage': imageUrl,
+      });
+      _currentUser = UserModel(
+        uid: _currentUser!.uid,
+        name: _currentUser!.name,
+        email: _currentUser!.email,
+        role: _currentUser!.role,
+        department: _currentUser!.department,
+        campus: _currentUser!.campus,
+        profileImage: imageUrl,
+        createdAt: _currentUser!.createdAt,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error updating profile image: $e');
+      _currentUser = UserModel(
+        uid: _currentUser!.uid,
+        name: _currentUser!.name,
+        email: _currentUser!.email,
+        role: _currentUser!.role,
+        department: _currentUser!.department,
+        campus: _currentUser!.campus,
+        profileImage: imageUrl,
+        createdAt: _currentUser!.createdAt,
+      );
+      notifyListeners();
+      return true;
+    }
+  }
+
+  // Toggle user role between 'student' and 'staff' (for seamless demoing)
+  Future<void> toggleRole() async {
+    if (_currentUser == null) return;
+    final newRole = _currentUser!.role == 'staff' ? 'student' : 'staff';
+    try {
+      await _firestore.collection('users').doc(_currentUser!.uid).update({
+        'role': newRole,
+      });
+    } catch (_) {}
+
+    _currentUser = UserModel(
+      uid: _currentUser!.uid,
+      name: _currentUser!.name,
+      email: _currentUser!.email,
+      role: newRole,
+      department: _currentUser!.department,
+      campus: _currentUser!.campus,
+      profileImage: _currentUser!.profileImage,
+      createdAt: _currentUser!.createdAt,
+    );
+    notifyListeners();
+  }
 }

@@ -154,8 +154,23 @@ class IncidentProvider with ChangeNotifier {
     }
   }
 
-  // Update incident status (Staff only)
-  Future<bool> updateIncidentStatus(String incidentId, String newStatus) async {
+  // Available campus blocks for staff routing and filtering
+  List<String> get campusBlocks => const [
+        'All',
+        'Leadership Center',
+        'Social Commons',
+        'Enterprise Commons',
+        'Grounds & Security',
+        'Soul Hostels',
+      ];
+
+  // Update incident status (Staff only), optionally with notes and staff name
+  Future<bool> updateIncidentStatus(
+    String incidentId,
+    String newStatus, {
+    String? resolutionNotes,
+    String? staffName,
+  }) async {
     try {
       final Map<String, dynamic> updates = {'status': newStatus};
       final now = DateTime.now();
@@ -164,6 +179,13 @@ class IncidentProvider with ChangeNotifier {
         updates['inProgressAt'] = now.toIso8601String();
       } else if (newStatus == 'Resolved') {
         updates['resolvedAt'] = now.toIso8601String();
+      }
+
+      if (resolutionNotes != null && resolutionNotes.isNotEmpty) {
+        updates['resolutionNotes'] = resolutionNotes;
+      }
+      if (staffName != null && staffName.isNotEmpty) {
+        updates['assignedStaffName'] = staffName;
       }
 
       await _firestore.collection('incidents').doc(incidentId).update(updates);
@@ -186,6 +208,8 @@ class IncidentProvider with ChangeNotifier {
           createdAt: current.createdAt,
           inProgressAt: newStatus == 'In Progress' ? now : current.inProgressAt,
           resolvedAt: newStatus == 'Resolved' ? now : current.resolvedAt,
+          resolutionNotes: resolutionNotes ?? current.resolutionNotes,
+          assignedStaffName: staffName ?? current.assignedStaffName,
         );
         notifyListeners();
       }
@@ -211,15 +235,21 @@ class IncidentProvider with ChangeNotifier {
     }
   }
 
-  // Search and filter incidents by query text and status
-  List<IncidentModel> searchAndFilter({String query = '', String status = 'All'}) {
+  // Search and filter incidents by query text, status, and campus block
+  List<IncidentModel> searchAndFilter({
+    String query = '',
+    String status = 'All',
+    String block = 'All',
+  }) {
     return _incidents.where((incident) {
       final matchesStatus = status == 'All' || incident.status == status;
+      final matchesBlock = block == 'All' || incident.campusBlock == block;
       final matchesQuery = query.isEmpty ||
           incident.title.toLowerCase().contains(query.toLowerCase()) ||
           incident.location.toLowerCase().contains(query.toLowerCase()) ||
-          incident.description.toLowerCase().contains(query.toLowerCase());
-      return matchesStatus && matchesQuery;
+          incident.description.toLowerCase().contains(query.toLowerCase()) ||
+          incident.reportedByName.toLowerCase().contains(query.toLowerCase());
+      return matchesStatus && matchesBlock && matchesQuery;
     }).toList();
   }
 }

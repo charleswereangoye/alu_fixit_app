@@ -59,5 +59,51 @@ void main() {
     // Search query match
     final waterResults = provider.searchAndFilter(query: 'water');
     expect(waterResults.any((i) => i.title.toLowerCase().contains('water')), true);
+
+    // Campus Block filtering test
+    final leadershipResults =
+        provider.searchAndFilter(block: 'Leadership Center');
+    expect(leadershipResults.every((i) => i.campusBlock == 'Leadership Center'),
+        true);
+  });
+
+  test('IncidentModel smart campus block and department routing works', () {
+    final labIncident = IncidentModel(
+      id: 'lab_1',
+      title: 'Broken projector',
+      description: 'HDMI cable snapped',
+      category: 'Facilities',
+      location: 'Leadership Center — Rwanda Lab',
+      reportedByUid: 'uid_1',
+      reportedByName: 'Amina',
+      reportedByEmail: 'a.hassan@alueducation.com',
+    );
+    expect(labIncident.campusBlock, 'Leadership Center');
+    expect(labIncident.assignedDepartment, 'IT & Technical Support');
+
+    final cafeteriaIncident = IncidentModel(
+      id: 'caf_1',
+      title: 'Water leak',
+      description: 'Pipe leaking under sink',
+      category: 'Water',
+      location: 'Social Commons — Food Court Cafeteria',
+      reportedByUid: 'uid_2',
+      reportedByName: 'Kwame',
+      reportedByEmail: 'k.mensah@alueducation.com',
+    );
+    expect(cafeteriaIncident.campusBlock, 'Social Commons');
+    expect(cafeteriaIncident.assignedDepartment, 'Facilities & Operations');
+
+    final hostelIncident = IncidentModel(
+      id: 'hostel_1',
+      title: 'Shower not heating up',
+      description: 'Water heater issue in residence',
+      category: 'Water',
+      location: 'Soul Hostels Bumbogo',
+      reportedByUid: 'uid_3',
+      reportedByName: 'Chalee',
+      reportedByEmail: 'c.angoye@alueducation.com',
+    );
+    expect(hostelIncident.campusBlock, 'Soul Hostels');
   });
 }

@@ -13,6 +13,8 @@ class IncidentModel {
   final DateTime createdAt;
   final DateTime? inProgressAt;
   final DateTime? resolvedAt;
+  final String? resolutionNotes;
+  final String? assignedStaffName;
 
   IncidentModel({
     required this.id,
@@ -28,7 +30,64 @@ class IncidentModel {
     DateTime? createdAt,
     this.inProgressAt,
     this.resolvedAt,
+    this.resolutionNotes,
+    this.assignedStaffName,
   }) : createdAt = createdAt ?? DateTime.now();
+
+  // Smart campus block detection based on location
+  String get campusBlock {
+    final loc = location.toLowerCase();
+    if (loc.contains('leadership') || loc.contains('lab')) {
+      return 'Leadership Center';
+    } else if (loc.contains('social') ||
+        loc.contains('cafeteria') ||
+        loc.contains('dining') ||
+        loc.contains('food court') ||
+        loc.contains('lounge')) {
+      return 'Social Commons';
+    } else if (loc.contains('enterprise') ||
+        loc.contains('fab lab') ||
+        loc.contains('incubator') ||
+        loc.contains('workstation')) {
+      return 'Enterprise Commons';
+    } else if (loc.contains('hostel') ||
+        loc.contains('soul') ||
+        loc.contains('mirror') ||
+        loc.contains('residence')) {
+      return 'Soul Hostels';
+    } else if (loc.contains('court') ||
+        loc.contains('gate') ||
+        loc.contains('parking') ||
+        loc.contains('security') ||
+        loc.contains('ground')) {
+      return 'Grounds & Security';
+    }
+    return 'General Campus';
+  }
+
+  // Smart routing to responsible staff department based on category and location
+  String get assignedDepartment {
+    switch (category) {
+      case 'Water':
+        return 'Facilities & Operations';
+      case 'Sanitation':
+        return 'Facilities & Operations';
+      case 'Electricity':
+        return 'Facilities / IT Support';
+      case 'Safety':
+        return 'Campus Safety & Security';
+      case 'Facilities':
+        if (location.toLowerCase().contains('lab') ||
+            title.toLowerCase().contains('projector') ||
+            title.toLowerCase().contains('screen') ||
+            title.toLowerCase().contains('wifi')) {
+          return 'IT & Technical Support';
+        }
+        return 'Facilities & Operations';
+      default:
+        return 'Campus Operations';
+    }
+  }
 
   // Convert to Map for Firestore storage
   Map<String, dynamic> toMap() {
@@ -45,6 +104,8 @@ class IncidentModel {
       'createdAt': createdAt.toIso8601String(),
       'inProgressAt': inProgressAt?.toIso8601String(),
       'resolvedAt': resolvedAt?.toIso8601String(),
+      'resolutionNotes': resolutionNotes,
+      'assignedStaffName': assignedStaffName,
     };
   }
 
@@ -70,6 +131,8 @@ class IncidentModel {
       resolvedAt: map['resolvedAt'] != null
           ? DateTime.tryParse(map['resolvedAt'])
           : null,
+      resolutionNotes: map['resolutionNotes'],
+      assignedStaffName: map['assignedStaffName'],
     );
   }
 
@@ -87,3 +150,4 @@ class IncidentModel {
     }
   }
 }
+
