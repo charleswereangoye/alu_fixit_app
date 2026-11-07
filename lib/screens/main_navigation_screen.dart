@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
 import 'home/home_screen.dart';
+import 'report/report_incident_screen.dart';
 
 // Main navigation screen hosting the bottom navigation bar and tabs
 class MainNavigationScreen extends StatefulWidget {
@@ -97,12 +98,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  // Trigger report screen or action
+  // Navigate to Report Incident Screen
   void _navigateToReportTab() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Report an Incident Screen will be connected in Step 3!'),
-        duration: Duration(seconds: 2),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ReportIncidentScreen(),
       ),
     );
   }
