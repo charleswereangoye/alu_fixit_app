@@ -21,17 +21,31 @@ class _SignupScreenState extends State<SignupScreen> {
 
   // Role & Department selections
   String _selectedRole = 'student'; // 'student' or 'staff'
-  String _selectedDepartment = 'Computer Science';
+  late String _selectedDepartment;
   bool _obscurePassword = true;
 
-  final List<String> _departments = [
-    'Computer Science',
-    'Global Challenges',
-    'Entrepreneurship',
-    'Operations & Facilities',
-    'Campus Security',
-    'Health & Wellness',
+  // Student degree programs at ALU
+  final List<String> _studentPrograms = [
+    'BSc (Hons) in Software Engineering (BSE)',
+    'BSc (Hons) in Entrepreneurial Leadership (BEL)',
+    'BSc (Hons) in International Business & Trade (IBT)',
   ];
+
+  // Campus staff departments
+  final List<String> _staffDepartments = [
+    'Faculty / Academic Staff',
+    'Facilities & Operations',
+    'Campus Safety & Security',
+    'Student Life & Residential',
+    'IT & Technical Support',
+    'Administration & Registry',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDepartment = _studentPrograms.first;
+  }
 
   @override
   void dispose() {
@@ -82,6 +96,13 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final currentOptions =
+        _selectedRole == 'student' ? _studentPrograms : _staffDepartments;
+
+    // Prevent assertion error during hot reload or role change if stale value exists
+    if (!currentOptions.contains(_selectedDepartment)) {
+      _selectedDepartment = currentOptions.first;
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground,
@@ -186,7 +207,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _selectedRole = 'student'),
+                        onTap: () => setState(() {
+                          _selectedRole = 'student';
+                          _selectedDepartment = _studentPrograms.first;
+                        }),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
@@ -231,7 +255,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _selectedRole = 'staff'),
+                        onTap: () => setState(() {
+                          _selectedRole = 'staff';
+                          _selectedDepartment = _staffDepartments.first;
+                        }),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
@@ -327,10 +354,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // Department / Program dropdown
-                const Text(
-                  'Department / Program',
-                  style: TextStyle(
+                // Degree Program (Student) or Department (Staff) dropdown
+                Text(
+                  _selectedRole == 'student'
+                      ? 'Academic Program'
+                      : 'Staff Department / Role',
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
                     fontSize: 14,
@@ -338,12 +367,26 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
+                  key: ValueKey('$_selectedRole-$_selectedDepartment'),
                   initialValue: _selectedDepartment,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.apartment_outlined, color: AppTheme.textSecondary),
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(
+                      _selectedRole == 'student'
+                          ? Icons.school_outlined
+                          : Icons.apartment_outlined,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
-                  items: _departments.map((dep) {
-                    return DropdownMenuItem(value: dep, child: Text(dep));
+                  items: currentOptions.map((dep) {
+                    return DropdownMenuItem(
+                      value: dep,
+                      child: Text(
+                        dep,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
                   }).toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => _selectedDepartment = val);
