@@ -84,16 +84,18 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User Profile Header Card (Displays uploaded photo and role)
-              _buildProfileHeaderCard(
-                name: userName,
-                role: userRole,
-                department: department,
-                campus: campus,
-                profileImage: profileImage,
-                isStaff: isStaff,
-              ),
-              const SizedBox(height: 20),
+              // User Profile Header Card (Only for Student mode matching Screenshot 4)
+              if (!isStaff) ...[
+                _buildProfileHeaderCard(
+                  name: userName,
+                  role: userRole,
+                  department: department,
+                  campus: campus,
+                  profileImage: profileImage,
+                  isStaff: isStaff,
+                ),
+                const SizedBox(height: 20),
+              ],
 
               // Report Statistic Cards (3 cards: Total Reports, In Progress, Resolved)
               _buildStatisticCards(incidentProvider, isStaff),

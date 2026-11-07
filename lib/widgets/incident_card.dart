@@ -37,7 +37,7 @@ class IncidentCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: AppTheme.cardBackground,
           borderRadius: BorderRadius.circular(16),
@@ -56,8 +56,8 @@ class IncidentCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                width: 60,
-                height: 60,
+                width: 54,
+                height: 54,
                 color: AppTheme.primaryLight,
                 child: incident.imageUrl != null && incident.imageUrl!.isNotEmpty
                     ? Image.network(
@@ -66,17 +66,17 @@ class IncidentCard extends StatelessWidget {
                         errorBuilder: (context, error, stackTrace) => Icon(
                           _getCategoryIcon(incident.category),
                           color: AppTheme.primary,
-                          size: 28,
+                          size: 26,
                         ),
                       )
                     : Icon(
                         _getCategoryIcon(incident.category),
                         color: AppTheme.primary,
-                        size: 28,
+                        size: 26,
                       ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
 
             // Incident details (title, location, date)
             Expanded(
@@ -89,50 +89,49 @@ class IncidentCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: 14.5,
                       color: AppTheme.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     incident.location,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12.5,
                       color: AppTheme.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryLight,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          incident.campusBlock,
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primary,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryLight,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            incident.campusBlock,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primary,
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Icons.access_time_rounded,
-                        size: 12,
-                        color: AppTheme.textMuted,
-                      ),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: 4),
                       Text(
-                        incident.timeAgo,
+                        '• ${incident.timeAgo}',
+                        maxLines: 1,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 10.5,
                           color: AppTheme.textMuted,
                         ),
                       ),
@@ -141,16 +140,18 @@ class IncidentCard extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 6),
 
             // Status chip and arrow
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 StatusBadge(status: incident.status),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 const Icon(
                   Icons.arrow_forward_ios,
-                  size: 14,
+                  size: 13,
                   color: AppTheme.textMuted,
                 ),
               ],

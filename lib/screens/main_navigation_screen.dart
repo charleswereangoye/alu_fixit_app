@@ -9,7 +9,7 @@ import 'reports/my_reports_screen.dart';
 import 'profile/profile_screen.dart';
 
 // Main navigation screen hosting the bottom navigation bar and tabs
-// Adapts dynamically between Student mode (reporting) and Staff mode (resolution)
+// Adapts dynamically: Student mode (with center + button) and Staff mode (all items uniform size)
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -55,66 +55,76 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            // Home / Hub tab
-            _buildNavItem(
-              index: 0,
-              icon: isStaff ? Icons.dashboard_rounded : Icons.home_rounded,
-              label: isStaff ? 'Hub' : 'Home',
-            ),
+          children: isStaff
+              ? [
+                  // Hub tab
+                  _buildNavItem(
+                    index: 0,
+                    icon: Icons.dashboard_rounded,
+                    label: 'Hub',
+                  ),
 
-            // Reports / Queue tab
-            _buildNavItem(
-              index: 1,
-              icon: isStaff
-                  ? Icons.assignment_turned_in_outlined
-                  : Icons.assignment_outlined,
-              label: isStaff ? 'Queue' : 'Reports',
-            ),
+                  // Queue tab
+                  _buildNavItem(
+                    index: 1,
+                    icon: Icons.assignment_outlined,
+                    label: 'Queue',
+                  ),
 
-            // Elevated Center Button:
-            // For Students: [+] New Report
-            // For Staff: [✓ / 📋] Jump to Resolution Queue
-            GestureDetector(
-              onTap: () {
-                if (isStaff) {
-                  setState(() => _currentIndex = 1);
-                } else {
-                  _navigateToReportTab();
-                }
-              },
-              child: Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: isStaff ? const Color(0xFF2C3E50) : AppTheme.primary,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isStaff
-                              ? const Color(0xFF2C3E50)
-                              : AppTheme.primary)
-                          .withValues(alpha: 0.35),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                  // Profile tab
+                  _buildNavItem(
+                    index: 2,
+                    icon: Icons.person_outline_rounded,
+                    label: 'Profile',
+                  ),
+                ]
+              : [
+                  // Student: Home tab
+                  _buildNavItem(
+                    index: 0,
+                    icon: Icons.home_rounded,
+                    label: 'Home',
+                  ),
+
+                  // Student: Reports tab
+                  _buildNavItem(
+                    index: 1,
+                    icon: Icons.assignment_outlined,
+                    label: 'Reports',
+                  ),
+
+                  // Student: Elevated Center "+" Report Button (Screenshot 1)
+                  GestureDetector(
+                    onTap: _navigateToReportTab,
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withValues(alpha: 0.35),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                     ),
-                  ],
-                ),
-                child: Icon(
-                  isStaff ? Icons.checklist_rounded : Icons.add,
-                  color: Colors.white,
-                  size: isStaff ? 26 : 28,
-                ),
-              ),
-            ),
+                  ),
 
-            // Profile tab
-            _buildNavItem(
-              index: 2,
-              icon: Icons.person_outline_rounded,
-              label: 'Profile',
-            ),
-          ],
+                  // Student: Profile tab
+                  _buildNavItem(
+                    index: 2,
+                    icon: Icons.person_outline_rounded,
+                    label: 'Profile',
+                  ),
+                ],
         ),
       ),
     );
@@ -130,15 +140,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  // Helper widget for bottom nav items
+  // Helper widget for bottom nav items with uniform styling
   Widget _buildNavItem({
     required int index,
     required IconData icon,
     required String label,
+    VoidCallback? onTap,
   }) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: onTap ?? () => setState(() => _currentIndex = index),
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -93,5 +93,17 @@ void main() {
     );
     expect(cafeteriaIncident.campusBlock, 'Social Commons');
     expect(cafeteriaIncident.assignedDepartment, 'Facilities & Operations');
+
+    final hostelIncident = IncidentModel(
+      id: 'hostel_1',
+      title: 'Shower not heating up',
+      description: 'Water heater issue in residence',
+      category: 'Water',
+      location: 'Soul Hostels Bumbogo',
+      reportedByUid: 'uid_3',
+      reportedByName: 'Chalee',
+      reportedByEmail: 'c.angoye@alueducation.com',
+    );
+    expect(hostelIncident.campusBlock, 'Soul Hostels');
   });
 }

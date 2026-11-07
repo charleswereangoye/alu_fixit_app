@@ -161,7 +161,7 @@ class IncidentProvider with ChangeNotifier {
         'Social Commons',
         'Enterprise Commons',
         'Grounds & Security',
-        'Soul Hostels & Housing',
+        'Soul Hostels',
       ];
 
   // Update incident status (Staff only), optionally with notes and staff name

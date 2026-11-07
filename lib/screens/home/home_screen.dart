@@ -104,33 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Text('👋', style: TextStyle(fontSize: 22)),
                 ],
               ),
-              const SizedBox(height: 4),
-              if (isStaff)
-                Container(
-                  margin: const EdgeInsets.only(top: 2, bottom: 4),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryLight,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                        color: AppTheme.primary.withValues(alpha: 0.3)),
-                  ),
-                  child: const Text(
-                    'CAMPUS OPERATIONS STAFF',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              Text(
-                isStaff
-                    ? 'Staff Resolution Hub • ALU Kigali Innovation City\nReview reports and manage campus facility operations.'
-                    : 'Help make our campus safer.\nReport issues and track their resolution.',
-                style: const TextStyle(
+              const SizedBox(height: 6),
+              const Text(
+                'Help make our campus safer.\nReport issues and track their resolution.',
+                style: TextStyle(
                   fontSize: 13,
                   color: AppTheme.textSecondary,
                   height: 1.4,

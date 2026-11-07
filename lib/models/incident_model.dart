@@ -54,7 +54,7 @@ class IncidentModel {
         loc.contains('soul') ||
         loc.contains('mirror') ||
         loc.contains('residence')) {
-      return 'Soul Hostels & Housing';
+      return 'Soul Hostels';
     } else if (loc.contains('court') ||
         loc.contains('gate') ||
         loc.contains('parking') ||
