@@ -3,6 +3,8 @@ import '../utils/app_theme.dart';
 import 'home/home_screen.dart';
 import 'report/report_incident_screen.dart';
 import 'details/incident_details_screen.dart';
+import 'reports/my_reports_screen.dart';
+import 'profile/profile_screen.dart';
 
 // Main navigation screen hosting the bottom navigation bar and tabs
 class MainNavigationScreen extends StatefulWidget {
@@ -31,10 +33,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           );
         },
       ),
-      // Reports tab placeholder (will be implemented in Step 5)
-      const Center(child: Text('Reports List Screen (Step 5)')),
-      // Profile tab placeholder (will be implemented in Step 5)
-      const Center(child: Text('Profile Screen (Step 5)')),
+      // Reports tab (Screenshot 4)
+      const MyReportsScreen(),
+      // Profile tab
+      const ProfileScreen(),
     ];
 
     return Scaffold(
