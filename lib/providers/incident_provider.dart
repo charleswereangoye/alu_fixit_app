@@ -57,7 +57,7 @@ class IncidentProvider with ChangeNotifier {
         description:
             'There has been no water supply in the student residence since this morning. This is affecting many students on the 2nd floor. Kindly check and fix the issue.',
         category: 'Water',
-        location: 'Student Residence',
+        location: 'Soul Hostels (Soul A & Soul B) — Bumbogo',
         status: 'Submitted',
         reportedByUid: 'user-amina',
         reportedByName: 'Amina Hassan',
@@ -68,9 +68,9 @@ class IncidentProvider with ChangeNotifier {
         id: 'sample-2',
         title: 'Broken classroom projector',
         description:
-            'The overhead projector in room 204 won\'t turn on during lectures. Requires technical check.',
+            'The overhead projector in Rwanda Learning Lab won\'t turn on during lectures. Requires technical check.',
         category: 'Facilities',
-        location: 'Block B',
+        location: 'Leadership Center — Rwanda Learning Lab',
         status: 'In Progress',
         reportedByUid: 'user-amina',
         reportedByName: 'Amina Hassan',
@@ -82,9 +82,9 @@ class IncidentProvider with ChangeNotifier {
         id: 'sample-3',
         title: 'Overflowing bin',
         description:
-            'The waste bin near the cafeteria entrance is overflowing and needs immediate sanitation attention.',
+            'The waste bin near the food court entrance is overflowing and needs immediate sanitation attention.',
         category: 'Sanitation',
-        location: 'Cafeteria',
+        location: 'Social Commons — Food Court / Cafeteria',
         status: 'Resolved',
         reportedByUid: 'user-amina',
         reportedByName: 'Amina Hassan',
