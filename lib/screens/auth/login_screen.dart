@@ -61,31 +61,29 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App logo and branding
+                  // Official ALU logo
                   Center(
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryLight,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: const Icon(
-                        Icons.build_circle_rounded,
-                        size: 48,
-                        color: AppTheme.primary,
+                    child: Image.asset(
+                      'assets/images/alu_logo.png',
+                      height: 70,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Image.network(
+                        'https://upload.wikimedia.org/wikipedia/commons/1/1f/Alu_logo.png',
+                        height: 70,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Header title
+                  // Header title: FIXIT in bold and capital letters
                   const Text(
-                    'ALU FixIt',
+                    'FIXIT',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 2.0,
                       color: AppTheme.textPrimary,
                     ),
                   ),

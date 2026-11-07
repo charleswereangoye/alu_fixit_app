@@ -33,7 +33,7 @@ class ALUFixItApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => IncidentProvider()),
       ],
       child: MaterialApp(
-        title: 'ALU FixIt',
+        title: 'FIXIT',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const AuthWrapper(),
