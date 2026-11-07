@@ -7,7 +7,7 @@ import '../../providers/incident_provider.dart';
 import '../../utils/app_theme.dart';
 import '../../widgets/status_badge.dart';
 
-// Screen displaying full incident details, timeline, and staff status update controls
+// Screen displaying full incident details, timeline, campus block routing, and staff resolution controls
 class IncidentDetailsScreen extends StatefulWidget {
   final IncidentModel incident;
 
@@ -36,56 +36,141 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
     return DateFormat('MMM d, h:mm a').format(date);
   }
 
-  // Handle staff updating incident status
+  // Fast one-tap status change for staff
+  Future<void> _quickUpdateStatus(String newStatus) async {
+    final provider = Provider.of<IncidentProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+
+    final success = await provider.updateIncidentStatus(
+      _incident.id,
+      newStatus,
+      staffName: auth.currentUser?.name,
+    );
+
+    if (success && mounted) {
+      setState(() {
+        _incident = provider.incidents.firstWhere(
+          (i) => i.id == _incident.id,
+          orElse: () => _incident,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Status marked as "$newStatus" ✓'),
+          backgroundColor: AppTheme.statusResolvedText,
+        ),
+      );
+    }
+  }
+
+  // Handle staff updating incident status with optional resolution notes
   Future<void> _showStatusUpdateDialog() async {
     final provider = Provider.of<IncidentProvider>(context, listen: false);
-    String selectedStatus = _incident.status;
+    final auth = Provider.of<AuthProvider>(context, listen: false);
 
-    final updated = await showDialog<String>(
+    String selectedStatus = _incident.status;
+    final noteController =
+        TextEditingController(text: _incident.resolutionNotes ?? '');
+
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Update Incident Status'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: ['Submitted', 'In Progress', 'Resolved'].map((status) {
-              final isSelected = selectedStatus == status;
-              return ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                title: Text(
-                  status,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Text('Update Incident Status & Notes'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select Status:',
                   style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
-                leading: Icon(
-                  isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                  color: isSelected ? AppTheme.primary : AppTheme.textMuted,
+                const SizedBox(height: 6),
+                ...['Submitted', 'In Progress', 'Resolved'].map((status) {
+                  final isSelected = selectedStatus == status;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    title: Text(
+                      status,
+                      style: TextStyle(
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected
+                            ? AppTheme.primary
+                            : AppTheme.textPrimary,
+                      ),
+                    ),
+                    leading: Icon(
+                      isSelected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                      color: isSelected ? AppTheme.primary : AppTheme.textMuted,
+                    ),
+                    onTap: () {
+                      setDialogState(() => selectedStatus = status);
+                    },
+                  );
+                }),
+                const SizedBox(height: 12),
+                const Text(
+                  'Technician / Resolution Notes (Optional):',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textSecondary,
+                  ),
                 ),
-                onTap: () {
-                  setDialogState(() => selectedStatus = status);
-                },
-              );
-            }).toList(),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: noteController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText:
+                        'e.g. Technician dispatched to Rwanda Lab — repaired socket.',
+                    hintStyle: const TextStyle(
+                        color: AppTheme.textMuted, fontSize: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: AppTheme.borderColor),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, selectedStatus),
-              child: const Text('Update'),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Save & Update'),
             ),
           ],
         ),
       ),
     );
 
-    if (updated != null && updated != _incident.status) {
-      final success = await provider.updateIncidentStatus(_incident.id, updated);
+    if (confirmed == true && mounted) {
+      final success = await provider.updateIncidentStatus(
+        _incident.id,
+        selectedStatus,
+        resolutionNotes: noteController.text.trim(),
+        staffName: auth.currentUser?.name,
+      );
+
       if (success && mounted) {
         setState(() {
           _incident = provider.incidents.firstWhere(
@@ -95,7 +180,7 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Status updated to "$updated"'),
+            content: Text('Status updated to "$selectedStatus"!'),
             backgroundColor: AppTheme.statusResolvedText,
           ),
         );
@@ -108,7 +193,8 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Incident Report?'),
         content: const Text(
           'Are you sure you want to remove this incident report? This will delete it permanently from Firestore.',
@@ -119,7 +205,8 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444)),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Delete'),
           ),
@@ -145,16 +232,13 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
-    final isStaff = auth.currentUser?.isStaff ?? false;
-    final isOwner = auth.currentUser?.uid == _incident.reportedByUid;
+    final user = auth.currentUser;
+    final isStaff = user?.isStaff ?? false;
+    final isReporter = user?.uid == _incident.reportedByUid;
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: const Text(
           'Incident Details',
           style: TextStyle(
@@ -163,19 +247,22 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new,
+              size: 20, color: AppTheme.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
-          // 3-dot action menu for status update and delete (CRUD)
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert, color: AppTheme.textPrimary),
             onSelected: (val) {
-              if (val == 'status') {
-                _showStatusUpdateDialog();
-              } else if (val == 'delete') {
+              if (val == 'delete') {
                 _deleteIncident();
+              } else if (val == 'status') {
+                _showStatusUpdateDialog();
               }
             },
-            itemBuilder: (ctx) => [
+            itemBuilder: (context) => [
               if (isStaff)
                 const PopupMenuItem(
                   value: 'status',
@@ -183,18 +270,20 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
                     children: [
                       Icon(Icons.edit_note, color: AppTheme.primary, size: 20),
                       SizedBox(width: 8),
-                      Text('Update Status (Staff)'),
+                      Text('Update Status'),
                     ],
                   ),
                 ),
-              if (isStaff || isOwner)
+              if (isReporter || isStaff)
                 const PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                      Icon(Icons.delete_outline,
+                          color: Color(0xFFEF4444), size: 20),
                       SizedBox(width: 8),
-                      Text('Delete Report', style: TextStyle(color: Color(0xFFEF4444))),
+                      Text('Delete Report',
+                          style: TextStyle(color: Color(0xFFEF4444))),
                     ],
                   ),
                 ),
@@ -208,9 +297,22 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Card: Thumbnail, Title, Location, and Metadata
+              // Top Card: Thumbnail, Title, Location, Routing Metadata
               _buildTopCard(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Staff Control Action Box (When logged in as staff)
+              if (isStaff) ...[
+                _buildStaffActionBox(),
+                const SizedBox(height: 20),
+              ],
+
+              // Resolution Notes Section (If added by staff)
+              if (_incident.resolutionNotes != null &&
+                  _incident.resolutionNotes!.isNotEmpty) ...[
+                _buildResolutionNotesCard(),
+                const SizedBox(height: 20),
+              ],
 
               // Status Timeline Section
               _buildStatusTimeline(),
@@ -222,20 +324,7 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
 
               // Attached Photo Section
               _buildAttachedPhotoSection(),
-              const SizedBox(height: 24),
-
-              // Staff Update Button (only visible for campus staff)
-              if (isStaff) ...[
-                ElevatedButton.icon(
-                  onPressed: _showStatusUpdateDialog,
-                  icon: const Icon(Icons.edit_note, color: Colors.white),
-                  label: const Text('Update Status (Staff Only)'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
+              const SizedBox(height: 28),
             ],
           ),
         ),
@@ -243,7 +332,7 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
     );
   }
 
-  // Top header card with thumbnail, title, location, and dates
+  // Top header card with thumbnail, title, location, and campus routing
   Widget _buildTopCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -264,11 +353,13 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
                   width: 80,
                   height: 80,
                   color: AppTheme.primaryLight,
-                  child: _incident.imageUrl != null && _incident.imageUrl!.isNotEmpty
+                  child: _incident.imageUrl != null &&
+                          _incident.imageUrl!.isNotEmpty
                       ? Image.network(
                           _incident.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => _buildPlaceholderIcon(),
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildPlaceholderIcon(),
                         )
                       : _buildPlaceholderIcon(),
                 ),
@@ -306,6 +397,29 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
           const SizedBox(height: 16),
           const Divider(height: 1, color: AppTheme.borderColor),
           const SizedBox(height: 14),
+
+          // Campus Routing Row (Block and Responsible Staff Department)
+          Row(
+            children: [
+              const Icon(
+                Icons.apartment_rounded,
+                size: 16,
+                color: AppTheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${_incident.campusBlock} • ${_incident.assignedDepartment}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
 
           // Submission Date Row
           Row(
@@ -350,21 +464,167 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
     );
   }
 
+  // Staff Quick Action Control Box
+  Widget _buildStaffActionBox() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2C3E50),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.admin_panel_settings_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Campus Staff Action Control',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Quick 1-tap Status Buttons
+          Row(
+            children: [
+              if (_incident.status == 'Submitted')
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _quickUpdateStatus('In Progress'),
+                    icon: const Icon(Icons.bolt, size: 16),
+                    label: const Text('Start Work'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_incident.status == 'Submitted') const SizedBox(width: 10),
+              if (_incident.status != 'Resolved')
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _quickUpdateStatus('Resolved'),
+                    icon: const Icon(Icons.check_circle_outline, size: 16),
+                    label: const Text('Mark Resolved'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF16A34A),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Full update status & add technician notes button
+          OutlinedButton.icon(
+            onPressed: _showStatusUpdateDialog,
+            icon: const Icon(Icons.edit_note, size: 18),
+            label: const Text('Update Status & Add Resolution Notes'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(42),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Resolution Notes Card
+  Widget _buildResolutionNotesCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECFDF5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFA7F3D0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.verified_outlined, color: Color(0xFF059669), size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Staff Resolution Note',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF047857),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _incident.resolutionNotes!,
+            style: const TextStyle(
+              fontSize: 13.5,
+              color: Color(0xFF065F46),
+              height: 1.4,
+            ),
+          ),
+          if (_incident.assignedStaffName != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Handled by: ${_incident.assignedStaffName}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: Color(0xFF047857),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   // Horizontal Status Timeline matching Screenshot 3
   Widget _buildStatusTimeline() {
     final status = _incident.status;
-    final isSubmittedDone = true; // Always reached
+    const isSubmittedDone = true;
     final isInProgressActive = status == 'In Progress' || status == 'Resolved';
     final isResolvedActive = status == 'Resolved';
 
-    // Dates for each step
-    final submittedTime = _formatShortDate(_incident.createdAt);
-    final inProgressTime = _incident.inProgressAt != null
+    final submittedDate = _formatShortDate(_incident.createdAt);
+    final inProgressDate = _incident.inProgressAt != null
         ? _formatShortDate(_incident.inProgressAt!)
-        : (status == 'In Progress' || status == 'Resolved' ? 'Oct 16, 2:30 PM' : '—');
-    final resolvedTime = _incident.resolvedAt != null
+        : (isInProgressActive ? 'In Progress' : 'Pending');
+    final resolvedDate = _incident.resolvedAt != null
         ? _formatShortDate(_incident.resolvedAt!)
-        : (status == 'Resolved' ? 'Oct 17, 11:00 AM' : '—');
+        : (isResolvedActive ? 'Resolved' : 'Pending');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,62 +637,18 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
             color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: 18),
-
-        // Steps & connecting lines
+        const SizedBox(height: 16),
         Row(
           children: [
-            // Step 1: Submitted Circle
-            _buildTimelineCircle(
-              isCompleted: isSubmittedDone,
-              isActive: status == 'Submitted',
-              icon: Icons.check,
-            ),
-
-            // Connecting line 1 -> 2
             Expanded(
-              child: Container(
-                height: 3,
-                color: isInProgressActive ? AppTheme.primary : AppTheme.borderColor,
-              ),
-            ),
-
-            // Step 2: In Progress Circle
-            _buildTimelineCircle(
-              isCompleted: isResolvedActive,
-              isActive: status == 'In Progress',
-              icon: isResolvedActive ? Icons.check : Icons.add,
-            ),
-
-            // Connecting line 2 -> 3
-            Expanded(
-              child: Container(
-                height: 3,
-                color: isResolvedActive ? AppTheme.primary : AppTheme.borderColor,
-              ),
-            ),
-
-            // Step 3: Resolved Circle
-            _buildTimelineCircle(
-              isCompleted: isResolvedActive,
-              isActive: status == 'Resolved',
-              icon: Icons.add,
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Labels & Timestamps below each step
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Step 1 Label
-            SizedBox(
-              width: 90,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildTimelineCircle(
+                    isCompleted: isSubmittedDone,
+                    isActive: status == 'Submitted',
+                    icon: Icons.check,
+                  ),
+                  const SizedBox(height: 8),
                   const Text(
                     'Submitted',
                     style: TextStyle(
@@ -443,59 +659,76 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    submittedTime,
+                    submittedDate,
                     style: const TextStyle(
                       fontSize: 11,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.textMuted,
                     ),
                   ),
                 ],
               ),
             ),
-
-            // Step 2 Label
-            SizedBox(
-              width: 90,
+            Container(
+              width: 36,
+              height: 2,
+              color: isInProgressActive
+                  ? AppTheme.primary
+                  : const Color(0xFFD6DBE5),
+            ),
+            Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
+                  _buildTimelineCircle(
+                    isCompleted: isResolvedActive,
+                    isActive: status == 'In Progress',
+                    icon: isResolvedActive ? Icons.check : Icons.autorenew,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
                     'In Progress',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: isInProgressActive ? AppTheme.primary : AppTheme.textMuted,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    inProgressTime,
-                    style: TextStyle(
+                    inProgressDate,
+                    style: const TextStyle(
                       fontSize: 11,
-                      color: isInProgressActive ? AppTheme.textSecondary : AppTheme.textMuted,
+                      color: AppTheme.textMuted,
                     ),
                   ),
                 ],
               ),
             ),
-
-            // Step 3 Label
-            SizedBox(
-              width: 90,
+            Container(
+              width: 36,
+              height: 2,
+              color:
+                  isResolvedActive ? AppTheme.primary : const Color(0xFFD6DBE5),
+            ),
+            Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  _buildTimelineCircle(
+                    isCompleted: isResolvedActive,
+                    isActive: isResolvedActive,
+                    icon: Icons.check,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
                     'Resolved',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: isResolvedActive ? AppTheme.statusResolvedText : AppTheme.textMuted,
+                      color: AppTheme.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    resolvedTime,
+                    resolvedDate,
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppTheme.textMuted,
@@ -594,7 +827,8 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
                 ? Image.network(
                     _incident.imageUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _buildPlaceholderPhoto(),
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildPlaceholderPhoto(),
                   )
                 : _buildPlaceholderPhoto(),
           ),

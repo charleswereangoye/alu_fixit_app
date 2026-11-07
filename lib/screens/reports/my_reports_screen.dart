@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/incident_model.dart';
@@ -7,7 +8,9 @@ import '../../utils/app_theme.dart';
 import '../../widgets/incident_card.dart';
 import '../details/incident_details_screen.dart';
 
-// Screen displaying user's reports, statistics, and status filter tabs
+// Screen displaying reports, statistics, search, block filters, and status tabs
+// For Students: Displays personal reports tracking ("My Reports", Screenshot 4)
+// For Campus Staff: Functions as the "Campus Incident Queue" to review and inspect student reports
 class MyReportsScreen extends StatefulWidget {
   const MyReportsScreen({super.key});
 
@@ -18,6 +21,7 @@ class MyReportsScreen extends StatefulWidget {
 class _MyReportsScreenState extends State<MyReportsScreen> {
   // Selected filter tab ('All', 'Submitted', 'In Progress', 'Resolved')
   String _selectedFilter = 'All';
+  String _selectedBlock = 'All';
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
@@ -35,23 +39,32 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     final incidentProvider = Provider.of<IncidentProvider>(context);
 
     final user = auth.currentUser;
-    final userName = user?.name.isNotEmpty == true ? user!.name : 'Amina Hassan';
+    final isStaff = user?.isStaff ?? false;
+    final userName =
+        user?.name.isNotEmpty == true ? user!.name : 'Amina Hassan';
     final userRole = user?.role.isNotEmpty == true ? user!.role : 'Student';
-    final department = user?.department.isNotEmpty == true ? user!.department : 'Computer Science';
-    final campus = user?.campus.isNotEmpty == true ? user!.campus : 'Kigali, Rwanda';
+    final department = user?.department.isNotEmpty == true
+        ? user!.department
+        : (isStaff
+            ? 'Facilities & Operations'
+            : 'BSc (Hons) in Software Engineering (BSE)');
+    final campus =
+        user?.campus.isNotEmpty == true ? user!.campus : 'Kigali, Rwanda';
+    final profileImage = user?.profileImage;
 
-    // Get incidents filtered by selected tab and search query
+    // Filter incidents by search query, status tab, and campus block
     final displayedIncidents = incidentProvider.searchAndFilter(
       query: _searchQuery,
       status: _selectedFilter,
+      block: isStaff ? _selectedBlock : 'All',
     );
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground,
       appBar: AppBar(
-        title: const Text(
-          'My Reports',
-          style: TextStyle(
+        title: Text(
+          isStaff ? 'Campus Incident Queue' : 'My Reports',
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
@@ -59,7 +72,8 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppTheme.textPrimary),
+            icon:
+                const Icon(Icons.settings_outlined, color: AppTheme.textPrimary),
             onPressed: () => _showSettingsMenu(context, auth),
           ),
         ],
@@ -70,17 +84,19 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User Profile Header Card
+              // User Profile Header Card (Displays uploaded photo and role)
               _buildProfileHeaderCard(
                 name: userName,
                 role: userRole,
                 department: department,
                 campus: campus,
+                profileImage: profileImage,
+                isStaff: isStaff,
               ),
               const SizedBox(height: 20),
 
               // Report Statistic Cards (3 cards: Total Reports, In Progress, Resolved)
-              _buildStatisticCards(incidentProvider),
+              _buildStatisticCards(incidentProvider, isStaff),
               const SizedBox(height: 18),
 
               // Real-Time Search Bar
@@ -93,9 +109,13 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search reports by title, location...',
-                    hintStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary, size: 20),
+                    hintText: isStaff
+                        ? 'Search reports by title, student, or location...'
+                        : 'Search reports by title, location...',
+                    hintStyle: const TextStyle(
+                        color: AppTheme.textMuted, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search,
+                        color: AppTheme.textSecondary, size: 20),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear, size: 18),
@@ -115,12 +135,18 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
               ),
               const SizedBox(height: 16),
 
+              // Campus Block Filter Chips for Staff
+              if (isStaff) ...[
+                _buildCampusBlockFilter(incidentProvider),
+                const SizedBox(height: 16),
+              ],
+
               // Filter Tabs (All, Submitted, In Progress, Resolved)
               _buildFilterTabs(),
               const SizedBox(height: 18),
 
               // Filtered List of Incidents
-              _buildIncidentList(displayedIncidents),
+              _buildIncidentList(displayedIncidents, isStaff),
             ],
           ),
         ),
@@ -128,12 +154,14 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     );
   }
 
-  // Profile Header Card matching Screenshot 4
+  // Profile Header Card matching Screenshot 4 with real uploaded photo
   Widget _buildProfileHeaderCard({
     required String name,
     required String role,
     required String department,
     required String campus,
+    String? profileImage,
+    required bool isStaff,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -154,15 +182,31 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
               border: Border.all(color: AppTheme.borderColor),
             ),
             child: ClipOval(
-              child: Image.network(
-                'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.person,
-                  color: AppTheme.primary,
-                  size: 36,
-                ),
-              ),
+              child: profileImage != null && profileImage.isNotEmpty
+                  ? (profileImage.startsWith('http')
+                      ? Image.network(
+                          profileImage,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                            Icons.person,
+                            color: AppTheme.primary,
+                            size: 36,
+                          ),
+                        )
+                      : Image.file(
+                          File(profileImage),
+                          fit: BoxFit.cover,
+                        ))
+                  : Image.network(
+                      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.person,
+                        color: AppTheme.primary,
+                        size: 36,
+                      ),
+                    ),
             ),
           ),
           const SizedBox(width: 16),
@@ -187,17 +231,27 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Role Badge (Student or Staff)
+                    // Role Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryLight,
+                        color: isStaff
+                            ? const Color(0xFFEFF6FF)
+                            : AppTheme.primaryLight,
                         borderRadius: BorderRadius.circular(12),
+                        border: isStaff
+                            ? Border.all(
+                                color: const Color(0xFF2563EB)
+                                    .withValues(alpha: 0.3))
+                            : null,
                       ),
                       child: Text(
                         role.toUpperCase(),
-                        style: const TextStyle(
-                          color: AppTheme.primary,
+                        style: TextStyle(
+                          color: isStaff
+                              ? const Color(0xFF2563EB)
+                              : AppTheme.primary,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -210,8 +264,10 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                 // Department row
                 Row(
                   children: [
-                    const Icon(
-                      Icons.apartment_rounded,
+                    Icon(
+                      isStaff
+                          ? Icons.apartment_rounded
+                          : Icons.school_outlined,
                       size: 15,
                       color: AppTheme.textSecondary,
                     ),
@@ -258,14 +314,14 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
   }
 
   // 3 Statistic Cards: Total Reports, In Progress, Resolved
-  Widget _buildStatisticCards(IncidentProvider provider) {
+  Widget _buildStatisticCards(IncidentProvider provider, bool isStaff) {
     return Row(
       children: [
         // Total Reports
         Expanded(
           child: _buildStatItem(
             count: provider.totalCount,
-            label: 'Total Reports',
+            label: isStaff ? 'All Reports' : 'Total Reports',
             color: const Color(0xFF5E4AE3),
             bgColor: const Color(0xFFF3F0FF),
           ),
@@ -334,7 +390,62 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     );
   }
 
-  // Horizontal Filter Tabs
+  // Campus Block Filter Chips for Staff
+  Widget _buildCampusBlockFilter(IncidentProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Filter by Campus Block:',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: provider.campusBlocks.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final block = provider.campusBlocks[index];
+              final isSelected = _selectedBlock == block;
+              return ChoiceChip(
+                label: Text(block),
+                selected: isSelected,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() => _selectedBlock = block);
+                  }
+                },
+                selectedColor: const Color(0xFF2C3E50),
+                backgroundColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : AppTheme.textPrimary,
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: BorderSide(
+                    color: isSelected
+                        ? const Color(0xFF2C3E50)
+                        : AppTheme.borderColor,
+                  ),
+                ),
+                showCheckmark: false,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Horizontal Filter Tabs matching Screenshot 4
   Widget _buildFilterTabs() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -346,17 +457,23 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _selectedFilter = filter),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.primary : const Color(0xFFF1F3FA),
-                  borderRadius: BorderRadius.circular(12),
+                  color: isSelected ? AppTheme.primary : Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color:
+                        isSelected ? AppTheme.primary : AppTheme.borderColor,
+                  ),
                 ),
                 child: Text(
                   filter,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? Colors.white : AppTheme.textPrimary,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? Colors.white : AppTheme.textSecondary,
                   ),
                 ),
               ),
@@ -367,12 +484,18 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     );
   }
 
-  // List of incidents filtered by selected tab
-  Widget _buildIncidentList(List<IncidentModel> incidents) {
+  // Incident List
+  Widget _buildIncidentList(
+      List<IncidentModel> incidents, bool isStaff) {
     if (incidents.isEmpty) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 40),
-        alignment: Alignment.center,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.borderColor),
+        ),
         child: Column(
           children: [
             const Icon(
@@ -382,9 +505,23 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'No "$_selectedFilter" reports found.',
+              isStaff
+                  ? 'No reports matching current filter or search.'
+                  : 'No reports found.',
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              isStaff
+                  ? 'Reports submitted by students will appear in this review queue.'
+                  : 'When you submit incident reports, they will be tracked here.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
                 color: AppTheme.textSecondary,
               ),
             ),
@@ -405,7 +542,8 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => IncidentDetailsScreen(incident: incident),
+                builder: (context) =>
+                    IncidentDetailsScreen(incident: incident),
               ),
             );
           },
@@ -414,31 +552,41 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     );
   }
 
-  // Settings / Account sheet
+  // Settings menu bottom sheet
   void _showSettingsMenu(BuildContext context, AuthProvider auth) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.person_outline, color: AppTheme.primary),
-                title: Text(auth.currentUser?.name ?? 'User Profile'),
-                subtitle: Text(auth.currentUser?.email ?? ''),
+                leading: const Icon(Icons.swap_horiz, color: AppTheme.primary),
+                title: Text(
+                  'Switch to ${auth.currentUser?.isStaff == true ? 'Student' : 'Staff'} Mode',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: const Text('Toggle role presentation for demo'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  auth.toggleRole();
+                },
               ),
-              const Divider(),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.redAccent),
-                title: const Text('Log Out', style: TextStyle(color: Colors.redAccent)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  auth.signOut();
+                title: const Text(
+                  'Log Out',
+                  style: TextStyle(
+                      color: Colors.redAccent, fontWeight: FontWeight.bold),
+                ),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await auth.signOut();
                 },
               ),
             ],

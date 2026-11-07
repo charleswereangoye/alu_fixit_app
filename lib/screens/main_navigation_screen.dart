@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../utils/app_theme.dart';
 import 'home/home_screen.dart';
 import 'report/report_incident_screen.dart';
@@ -7,6 +9,7 @@ import 'reports/my_reports_screen.dart';
 import 'profile/profile_screen.dart';
 
 // Main navigation screen hosting the bottom navigation bar and tabs
+// Adapts dynamically between Student mode (reporting) and Staff mode (resolution)
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -19,6 +22,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final isStaff = auth.currentUser?.isStaff ?? false;
+
     // List of screens for each bottom navigation tab
     final List<Widget> screens = [
       HomeScreen(
@@ -33,7 +39,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           );
         },
       ),
-      // Reports tab (Screenshot 4)
+      // Reports / Resolution Desk tab
       const MyReportsScreen(),
       // Profile tab
       const ProfileScreen(),
@@ -50,41 +56,54 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // Home tab
+            // Home / Hub tab
             _buildNavItem(
               index: 0,
-              icon: Icons.home_rounded,
-              label: 'Home',
+              icon: isStaff ? Icons.dashboard_rounded : Icons.home_rounded,
+              label: isStaff ? 'Hub' : 'Home',
             ),
 
-            // Reports tab
+            // Reports / Queue tab
             _buildNavItem(
               index: 1,
-              icon: Icons.assignment_outlined,
-              label: 'Reports',
+              icon: isStaff
+                  ? Icons.assignment_turned_in_outlined
+                  : Icons.assignment_outlined,
+              label: isStaff ? 'Queue' : 'Reports',
             ),
 
-            // Elevated Center "+" Report Button
+            // Elevated Center Button:
+            // For Students: [+] New Report
+            // For Staff: [✓ / 📋] Jump to Resolution Queue
             GestureDetector(
-              onTap: _navigateToReportTab,
+              onTap: () {
+                if (isStaff) {
+                  setState(() => _currentIndex = 1);
+                } else {
+                  _navigateToReportTab();
+                }
+              },
               child: Container(
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppTheme.primary,
+                  color: isStaff ? const Color(0xFF2C3E50) : AppTheme.primary,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primary.withValues(alpha: 0.35),
+                      color: (isStaff
+                              ? const Color(0xFF2C3E50)
+                              : AppTheme.primary)
+                          .withValues(alpha: 0.35),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.add,
+                child: Icon(
+                  isStaff ? Icons.checklist_rounded : Icons.add,
                   color: Colors.white,
-                  size: 28,
+                  size: isStaff ? 26 : 28,
                 ),
               ),
             ),

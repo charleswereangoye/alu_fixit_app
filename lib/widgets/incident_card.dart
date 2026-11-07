@@ -106,16 +106,33 @@ class IncidentCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryLight,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          incident.campusBlock,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
                       const Icon(
-                        Icons.calendar_today_outlined,
-                        size: 13,
+                        Icons.access_time_rounded,
+                        size: 12,
                         color: AppTheme.textMuted,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       Text(
                         incident.timeAgo,
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: AppTheme.textMuted,
                         ),
                       ),
