@@ -99,11 +99,37 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Official ALU logo & FIXIT branding
+                Center(
+                  child: Image.asset(
+                    'assets/images/alu_logo.png',
+                    height: 55,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Image.network(
+                      'https://upload.wikimedia.org/wikipedia/commons/1/1f/Alu_logo.png',
+                      height: 55,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'FIXIT',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2.0,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // Screen header
                 const Text(
                   'Create Account',
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textPrimary,
                   ),
