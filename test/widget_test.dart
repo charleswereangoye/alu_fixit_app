@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:alu_fixit_app/models/user_model.dart';
 import 'package:alu_fixit_app/models/incident_model.dart';
+import 'package:alu_fixit_app/providers/incident_provider.dart';
 
 void main() {
   test('UserModel converts to and from Map correctly', () {
@@ -45,5 +46,18 @@ void main() {
     expect(reconstructed.title, 'Water shortage');
     expect(reconstructed.location, 'Student Residence');
     expect(reconstructed.timeAgo, 'Just now');
+  });
+
+  test('IncidentProvider search and filter operations work accurately', () {
+    final provider = IncidentProvider();
+    expect(provider.incidents.isNotEmpty, true);
+
+    // Filter by 'In Progress'
+    final inProgress = provider.searchAndFilter(status: 'In Progress');
+    expect(inProgress.every((i) => i.status == 'In Progress'), true);
+
+    // Search query match
+    final waterResults = provider.searchAndFilter(query: 'water');
+    expect(waterResults.any((i) => i.title.toLowerCase().contains('water')), true);
   });
 }

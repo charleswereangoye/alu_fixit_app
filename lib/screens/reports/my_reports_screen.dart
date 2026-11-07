@@ -18,8 +18,16 @@ class MyReportsScreen extends StatefulWidget {
 class _MyReportsScreenState extends State<MyReportsScreen> {
   // Selected filter tab ('All', 'Submitted', 'In Progress', 'Resolved')
   String _selectedFilter = 'All';
+  String _searchQuery = '';
+  final _searchController = TextEditingController();
 
   final List<String> _filters = ['All', 'Submitted', 'In Progress', 'Resolved'];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +40,11 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     final department = user?.department.isNotEmpty == true ? user!.department : 'Computer Science';
     final campus = user?.campus.isNotEmpty == true ? user!.campus : 'Kigali, Rwanda';
 
-    // Get incidents filtered by selected tab
-    final displayedIncidents = incidentProvider.filterByStatus(_selectedFilter);
+    // Get incidents filtered by selected tab and search query
+    final displayedIncidents = incidentProvider.searchAndFilter(
+      query: _searchQuery,
+      status: _selectedFilter,
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground,
@@ -70,7 +81,39 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
 
               // Report Statistic Cards (3 cards: Total Reports, In Progress, Resolved)
               _buildStatisticCards(incidentProvider),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
+
+              // Real-Time Search Bar
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.borderColor),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search reports by title, location...',
+                    hintStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary, size: 20),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // Filter Tabs (All, Submitted, In Progress, Resolved)
               _buildFilterTabs(),
