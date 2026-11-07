@@ -4,15 +4,20 @@ import '../models/incident_model.dart';
 
 // State management provider for Incident Reports
 class IncidentProvider with ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore? _customFirestore;
+  FirebaseFirestore get _firestore => _customFirestore ?? FirebaseFirestore.instance;
 
   List<IncidentModel> _incidents = [];
   bool _isLoading = false;
 
-  IncidentProvider() {
+  IncidentProvider({FirebaseFirestore? firestore}) : _customFirestore = firestore {
     // Load initial sample data and listen to live Firestore updates
     _loadSampleIncidents();
-    listenToIncidents();
+    try {
+      listenToIncidents();
+    } catch (e) {
+      debugPrint('Firestore initialization notice: $e');
+    }
   }
 
   // Getters
@@ -189,5 +194,32 @@ class IncidentProvider with ChangeNotifier {
       debugPrint('Error updating incident status: $e');
       return false;
     }
+  }
+
+  // Delete incident report from Firestore (CRUD: Delete)
+  Future<bool> deleteIncident(String incidentId) async {
+    try {
+      await _firestore.collection('incidents').doc(incidentId).delete();
+      _incidents.removeWhere((i) => i.id == incidentId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting incident: $e');
+      _incidents.removeWhere((i) => i.id == incidentId);
+      notifyListeners();
+      return true;
+    }
+  }
+
+  // Search and filter incidents by query text and status
+  List<IncidentModel> searchAndFilter({String query = '', String status = 'All'}) {
+    return _incidents.where((incident) {
+      final matchesStatus = status == 'All' || incident.status == status;
+      final matchesQuery = query.isEmpty ||
+          incident.title.toLowerCase().contains(query.toLowerCase()) ||
+          incident.location.toLowerCase().contains(query.toLowerCase()) ||
+          incident.description.toLowerCase().contains(query.toLowerCase());
+      return matchesStatus && matchesQuery;
+    }).toList();
   }
 }

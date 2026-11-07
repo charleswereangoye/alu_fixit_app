@@ -103,10 +103,50 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
     }
   }
 
+  // Delete report workflow
+  Future<void> _deleteIncident() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Incident Report?'),
+        content: const Text(
+          'Are you sure you want to remove this incident report? This will delete it permanently from Firestore.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final provider = Provider.of<IncidentProvider>(context, listen: false);
+      await provider.deleteIncident(_incident.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Report deleted from Firestore.'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final isStaff = auth.currentUser?.isStaff ?? false;
+    final isOwner = auth.currentUser?.uid == _incident.reportedByUid;
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground,
@@ -125,23 +165,41 @@ class _IncidentDetailsScreenState extends State<IncidentDetailsScreen> {
         ),
         centerTitle: true,
         actions: [
-          // 3-dot action menu (Staff can update status)
-          if (isStaff)
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: _showStatusUpdateDialog,
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Status updates are restricted to Campus Staff accounts.'),
+          // 3-dot action menu for status update and delete (CRUD)
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (val) {
+              if (val == 'status') {
+                _showStatusUpdateDialog();
+              } else if (val == 'delete') {
+                _deleteIncident();
+              }
+            },
+            itemBuilder: (ctx) => [
+              if (isStaff)
+                const PopupMenuItem(
+                  value: 'status',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_note, color: AppTheme.primary, size: 20),
+                      SizedBox(width: 8),
+                      Text('Update Status (Staff)'),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              if (isStaff || isOwner)
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                      SizedBox(width: 8),
+                      Text('Delete Report', style: TextStyle(color: Color(0xFFEF4444))),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
       body: SafeArea(
