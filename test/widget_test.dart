@@ -1,30 +1,24 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:alu_fixit_app/main.dart';
+import 'package:alu_fixit_app/models/user_model.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('UserModel converts to and from Map correctly', () {
+    final user = UserModel(
+      uid: 'test_123',
+      name: 'Amina Hassan',
+      email: 'a.hassan@alueducation.com',
+      role: 'student',
+      department: 'Computer Science',
+      campus: 'Kigali, Rwanda',
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final map = user.toMap();
+    expect(map['uid'], 'test_123');
+    expect(map['email'], 'a.hassan@alueducation.com');
+    expect(map['role'], 'student');
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    final reconstructed = UserModel.fromMap(map, 'test_123');
+    expect(reconstructed.name, 'Amina Hassan');
+    expect(reconstructed.isStaff, false);
   });
 }
