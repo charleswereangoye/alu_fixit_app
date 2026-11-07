@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
 import 'home/home_screen.dart';
 import 'report/report_incident_screen.dart';
+import 'details/incident_details_screen.dart';
 
 // Main navigation screen hosting the bottom navigation bar and tabs
 class MainNavigationScreen extends StatefulWidget {
@@ -22,10 +23,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onReportTap: () => _navigateToReportTab(),
         onSeeAllReports: () => setState(() => _currentIndex = 1),
         onIncidentTap: (incident) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Selected: ${incident.title} (Details in Step 4)'),
-              duration: const Duration(seconds: 1),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => IncidentDetailsScreen(incident: incident),
             ),
           );
         },
