@@ -24,7 +24,7 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
 
   // Selection states
   String _selectedCategory = 'Facilities';
-  String _selectedLocation = 'Block B — Room 204';
+  late String _selectedLocation;
   File? _pickedImage;
   bool _isSubmitting = false;
 
@@ -37,17 +37,48 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
     {'name': 'Sanitation', 'icon': Icons.delete_outline_rounded},
   ];
 
-  // Available locations
+  // Authentic ALU Kigali Innovation City Campus Locations & Hostels
   final List<String> _locations = [
-    'Block B — Room 204',
-    'Block A — Classroom 101',
-    'Student Residence',
-    'Cafeteria',
-    'Library & Learning Commons',
-    'Campus Sports Arena',
-    'Administration Building',
-    'Engineering & Tech Lab',
+    // Leadership Center (Academic Hub)
+    'Leadership Center — Rwanda Learning Lab',
+    'Leadership Center — Kenya Learning Lab',
+    'Leadership Center — Tanzania Learning Lab',
+    'Leadership Center — Uganda Learning Lab',
+    'Leadership Center — Burundi Learning Lab',
+    'Leadership Center — South Sudan Learning Lab',
+    'Leadership Center — Kenya/Burundi Combined Lab',
+    'Leadership Center — Tanzania/Uganda Combined Lab',
+
+    // Social Commons (Collaboration Hub & Dining)
+    'Social Commons — Food Court / Cafeteria',
+    'Social Commons — Nigeria Learning Lab',
+    'Social Commons — Ghana Learning Lab',
+    'Social Commons — South Africa Learning Lab',
+    'Social Commons — Ethiopia Learning Lab',
+    'Social Commons — Breakout Pods & Event Spaces',
+
+    // Enterprise Commons (Innovation & Prototyping)
+    'Enterprise Commons — Fab Lab (Prototyping)',
+    'Enterprise Commons — Egypt Learning Lab',
+    'Enterprise Commons — Morocco Learning Lab',
+    'Enterprise Commons — Angola Learning Lab',
+    'Enterprise Commons — Algeria Learning Lab',
+
+    // Campus Amenities & Common Grounds
+    'Campus Grounds — Basketball Court',
+    'Campus Grounds — Main Entrance / Security Gate',
+    'Campus Grounds — Student & Staff Parking Lot',
+
+    // Off-Campus Student Hostels & Residences
+    'Soul Hostels (Soul A & Soul B) — Bumbogo',
+    'The Mirror Hotel Student Residence ("Mirror")',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLocation = _locations.first;
+  }
 
   @override
   void dispose() {
@@ -140,6 +171,11 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Safety fallback: if current selection is not in list (e.g. after hot reload), reset to first
+    if (!_locations.contains(_selectedLocation)) {
+      _selectedLocation = _locations.first;
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground,
       appBar: AppBar(
@@ -239,7 +275,9 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
+                  key: ValueKey(_selectedLocation),
                   initialValue: _selectedLocation,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(
                       Icons.location_on_outlined,
@@ -251,7 +289,8 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
                       value: loc,
                       child: Text(
                         loc,
-                        style: const TextStyle(fontSize: 14),
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     );
                   }).toList(),
