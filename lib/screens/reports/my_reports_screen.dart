@@ -568,18 +568,6 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.swap_horiz, color: AppTheme.primary),
-                title: Text(
-                  'Switch to ${auth.currentUser?.isStaff == true ? 'Student' : 'Staff'} Mode',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text('Toggle role presentation for demo'),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  auth.toggleRole();
-                },
-              ),
-              ListTile(
                 leading: const Icon(Icons.logout, color: Colors.redAccent),
                 title: const Text(
                   'Log Out',

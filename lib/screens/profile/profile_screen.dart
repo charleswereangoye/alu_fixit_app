@@ -327,33 +327,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Seamless Role-Switch Toggle Button for Demo Presentation
-                    OutlinedButton.icon(
-                      onPressed: () => auth.toggleRole(),
-                      icon: Icon(
-                        userRole == 'staff'
-                            ? Icons.school_outlined
-                            : Icons.admin_panel_settings_outlined,
-                        size: 18,
-                        color: AppTheme.primary,
-                      ),
-                      label: Text(
-                        'Switch to ${userRole == 'staff' ? 'Student' : 'Campus Staff'} View',
-                        style: const TextStyle(
-                          color: AppTheme.primary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppTheme.primary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
