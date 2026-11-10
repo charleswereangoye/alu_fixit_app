@@ -26,7 +26,12 @@ class AuthProvider with ChangeNotifier {
         try {
           final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
           if (doc.exists && doc.data() != null) {
-            _currentUser = UserModel.fromMap(doc.data()!, doc.id);
+            final data = Map<String, dynamic>.from(doc.data()!);
+            if (firebaseUser.email?.trim().toLowerCase() == 'c.angoye@alueducation.com' && data['role'] != 'student') {
+              data['role'] = 'student';
+              _firestore.collection('users').doc(firebaseUser.uid).update({'role': 'student'});
+            }
+            _currentUser = UserModel.fromMap(data, doc.id);
           } else {
             _currentUser = UserModel(
               uid: firebaseUser.uid,
@@ -150,7 +155,12 @@ class AuthProvider with ChangeNotifier {
       try {
         final doc = await _firestore.collection('users').doc(uid).get();
         if (doc.exists && doc.data() != null) {
-          _currentUser = UserModel.fromMap(doc.data()!, doc.id);
+          final data = Map<String, dynamic>.from(doc.data()!);
+          if (cleanEmail == 'c.angoye@alueducation.com' && data['role'] != 'student') {
+            data['role'] = 'student';
+            _firestore.collection('users').doc(uid).update({'role': 'student'});
+          }
+          _currentUser = UserModel.fromMap(data, doc.id);
         } else {
           // Fallback if document not found in Firestore
           _currentUser = UserModel(
